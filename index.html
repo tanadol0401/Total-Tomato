@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #181b1f;
+      color: #d8d9da;
+      font-family: sans-serif;
+      padding: 16px;
+      max-width: 440px;
+      margin: 0 auto;
+      font-size: 14px;
+    }
+
+    /* API Key */
+    .key-section { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 6px; color: #aaa; font-size: 12px; }
+    input[type="text"], input[type="time"], input[type="number"] {
+      width: 100%;
+      padding: 9px 10px;
+      background: #2c2f35;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 6px;
+      font-size: 14px;
+      color-scheme: dark;
+    }
+    .key-row { display: flex; gap: 8px; align-items: center; }
+    .key-row input { flex: 1; }
+    .btn-blue { padding: 9px 14px; background: #1e6fbf; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+    #key-status { font-size: 11px; color: #f5a623; margin-top: 4px; min-height: 14px; }
+    .divider { border: none; border-top: 1px solid #2c2f35; margin: 14px 0; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+    .tab-btn {
+      flex: 1; padding: 12px 8px;
+      background: #222426; color: #aaa;
+      border: none; cursor: pointer;
+      font-size: 14px; font-weight: bold;
+      transition: all 0.15s;
+    }
+    .tab-btn.active { background: #ff6600; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Section cards */
+    .card {
+      background: #222426;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .card-title { font-size: 13px; color: #ff6600; font-weight: bold; margin-bottom: 12px; }
+
+    /* Buttons */
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-action {
+      padding: 16px 8px;
+      border: none; border-radius: 8px;
+      cursor: pointer; font-size: 14px;
+      font-weight: bold; text-align: center;
+      transition: opacity 0.15s;
+    }
+    .btn-action:active { opacity: 0.7; }
+    .btn-green { background: #1a9e4a; color: white; }
+    .btn-red   { background: #c0392b; color: white; }
+    .btn-icon  { font-size: 24px; display: block; margin-bottom: 4px; }
+
+    /* State badge */
+    .state-badge {
+      display: inline-block;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: bold; margin-left: 8px;
+    }
+    .badge-on  { background: #1a3d2b; color: #1a9e4a; border: 1px solid #1a9e4a; }
+    .badge-off { background: #2c1f1f; color: #c0392b; border: 1px solid #c0392b; }
+    .badge-idle{ background: #2c2f35; color: #666;    border: 1px solid #444; }
+
+    /* Status */
+    .status-box { font-size: 12px; margin-top: 10px; min-height: 16px; text-align: center; }
+
+    /* Scheduler */
+    .schedule-item {
+      display: flex; align-items: center;
+      background: #2c2f35; border: 1px solid #444;
+      border-radius: 6px; padding: 10px 12px;
+      margin-bottom: 8px; gap: 10px;
+    }
+    .schedule-item .s-time { font-size: 18px; font-weight: bold; color: #ff6600; min-width: 52px; }
+    .schedule-item .s-detail { flex: 1; font-size: 12px; color: #aaa; }
+    .schedule-item .s-detail .s-name { color: white; font-size: 13px; margin-bottom: 2px; }
+    .btn-gray { padding: 6px 10px; background: #444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .btn-green-sm { padding: 8px; background: #1a9e4a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; margin-top: 8px; }
+    .btn-red-sm   { padding: 8px; background: #c0392b; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; width: 100%; margin-top: 6px; }
+
+    .sched-ctrl { display: flex; gap: 8px; margin-top: 8px; }
+    .sched-ctrl button { flex: 1; padding: 10px; font-size: 13px; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; }
+
+    /* Clock */
+    #clock { text-align: center; font-size: 26px; font-weight: bold; color: white; letter-spacing: 2px; }
+    #date-disp { text-align: center; color: #555; font-size: 11px; margin-top: 2px; }
+    .sched-status { font-size: 12px; text-align: center; padding: 6px; border-radius: 6px; margin-top: 6px; }
+    .sched-running { background: #1a3d2b; color: #1a9e4a; border: 1px solid #1a9e4a; }
+    .sched-stopped { background: #2c2f35; color: #666; border: 1px solid #444; }
+
+    /* Day selector */
+    .day-selector { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+    .day-btn {
+      flex: 1; min-width: 32px; padding: 7px 4px;
+      border-radius: 4px; border: 1px solid #444;
+      background: #2c2f35; color: #aaa;
+      cursor: pointer; text-align: center; font-size: 11px;
+    }
+    .day-btn.sel { background: #ff6600; color: white; border-color: #ff6600; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .empty-msg { color: #555; font-size: 12px; text-align: center; padding: 12px; }
+    .log-box {
+      background: #111; border: 1px solid #333; border-radius: 6px;
+      padding: 8px; font-size: 11px; max-height: 80px;
+      overflow-y: auto; color: #73bf69; font-family: monospace;
+      margin-top: 8px;
+    }
+    .log-err { color: #e74c3c; }
+  </style>
+</head>
+<body>
+
+  <!-- นาฬิกา -->
+  <div id="clock">00:00:00</div>
+  <div id="date-disp">--</div>
+
+  <hr class="divider">
+
+  <!-- API Keys -->
+  <div class="key-section">
+    <label>🔑 ThingSpeak Write API Key</label>
+    <div class="key-row">
+      <input type="text" id="apikey" placeholder="ใส่ Write API Key">
+      <button class="btn-blue" onclick="saveKey()">💾 บันทึก</button>
+    </div>
+    <div id="key-status"></div>
+
+    <label style="margin-top:10px;">⏰ cron-job.org API Key</label>
+    <div class="key-row">
+      <input type="text" id="cronjob-key" placeholder="ใส่ cron-job.org API Key">
+      <button class="btn-blue" onclick="saveCronKey()">💾 บันทึก</button>
+    </div>
+    <div id="cronjob-key-status"></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('soil')">🌱 รดน้ำในดิน</button>
+    <button class="tab-btn"       onclick="switchTab('vpd')">💨 VPD</button>
+  </div>
+
+  <!-- ===== TAB 1: รดน้ำในดิน ===== -->
+  <div class="tab-content active" id="tab-soil">
+
+    <!-- Manual -->
+    <div class="card">
+      <div class="card-title">🕹️ Manual — เลือกโซน
+        <span class="state-badge badge-idle" id="soil-zone-state">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="soilZone(5)">
+          <span class="btn-icon">🌾</span>โซน 1-2
+        </button>
+        <button class="btn-action btn-red" onclick="soilZone(0)">
+          <span class="btn-icon">🌾</span>โซน 3-4
+        </button>
+      </div>
+      <div class="status-box" id="soil-zone-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💧 ปั๊มน้ำ (Field 6)
+        <span class="state-badge badge-idle" id="soil-pump-state">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="soilPump(5)">
+          <span class="btn-icon">⚡</span>เปิดปั๊ม
+        </button>
+        <button class="btn-action btn-red" onclick="soilPump(0)">
+          <span class="btn-icon">🔴</span>ปิดปั๊ม
+        </button>
+      </div>
+      <div class="status-box" id="soil-pump-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 5 วิ)</div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="soilStartZone(5)">
+          <span class="btn-icon">▶️</span>เริ่ม โซน 1-2
+        </button>
+        <button class="btn-action btn-green" onclick="soilStartZone(0)">
+          <span class="btn-icon">▶️</span>เริ่ม โซน 3-4
+        </button>
+      </div>
+      <button class="btn-action btn-red" style="width:100%;margin-top:10px;" onclick="soilStop()">
+        <span class="btn-icon">⏹️</span>หยุดทั้งหมด
+      </button>
+      <div class="status-box" id="soil-combo-status"></div>
+    </div>
+
+    <!-- Scheduler รดน้ำ -->
+    <div class="card">
+      <div class="card-title">⏰ Scheduler รดน้ำอัตโนมัติ</div>
+
+      <label>ชื่อรอบ</label>
+      <input type="text" id="soil-label" placeholder="เช่น รดเช้า" style="margin-bottom:8px;">
+      <div class="row2">
+        <div>
+          <label>เวลา</label>
+          <input type="time" id="soil-time" value="06:00" style="margin-bottom:8px;">
+        </div>
+        <div>
+          <label>โซน</label>
+          <select id="soil-zone-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
+            <option value="5">โซน 1-2</option>
+            <option value="0">โซน 3-4</option>
+          </select>
+        </div>
+      </div>
+      <label>วัน</label>
+      <div class="day-selector" id="soil-days">
+        <div class="day-btn sel" data-d="0">อา</div>
+        <div class="day-btn sel" data-d="1">จ</div>
+        <div class="day-btn sel" data-d="2">อ</div>
+        <div class="day-btn sel" data-d="3">พ</div>
+        <div class="day-btn sel" data-d="4">พฤ</div>
+        <div class="day-btn sel" data-d="5">ศ</div>
+        <div class="day-btn sel" data-d="6">ส</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-green-sm" onclick="addSchedule('soil')" style="flex:2;">➕ เพิ่มรอบนี้ (Local)</button>
+        <button class="btn-green-sm" onclick="addAndSendCron('soil')" style="flex:3;background:#1e6fbf;">☁️ เพิ่ม + ส่ง cron-job.org</button>
+      </div>
+
+      <hr class="divider">
+
+      <div id="soil-sched-list"><div class="empty-msg">ยังไม่มีตาราง</div></div>
+
+      <div class="sched-ctrl">
+        <button style="background:#1a9e4a;color:white;" onclick="startScheduler('soil')">▶ เริ่ม</button>
+        <button style="background:#c0392b;color:white;" onclick="stopScheduler('soil')">⏹ หยุด</button>
+      </div>
+      <div class="sched-status sched-stopped" id="soil-sched-status">⏹ ยังไม่ได้เริ่ม</div>
+      <div class="log-box" id="soil-log"><span style="color:#555">รอการทำงาน...</span></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: VPD ===== -->
+  <div class="tab-content" id="tab-vpd">
+
+    <!-- Manual VPD -->
+    <div class="card">
+      <div class="card-title">🕹️ Manual — VPD
+        <span class="state-badge badge-idle" id="vpd-state">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="vpdStart()">
+          <span class="btn-icon">💨</span>เปิด VPD
+        </button>
+        <button class="btn-action btn-red" onclick="vpdStop()">
+          <span class="btn-icon">🔴</span>ปิด VPD
+        </button>
+      </div>
+      <div class="status-box" id="vpd-status"></div>
+    </div>
+
+    <!-- Scheduler VPD -->
+    <div class="card">
+      <div class="card-title">⏰ Scheduler VPD อัตโนมัติ</div>
+
+      <label>ชื่อรอบ</label>
+      <input type="text" id="vpd-label" placeholder="เช่น VPD เช้า" style="margin-bottom:8px;">
+      <div class="row2">
+        <div>
+          <label>เวลา</label>
+          <input type="time" id="vpd-time" value="08:00" style="margin-bottom:8px;">
+        </div>
+        <div>
+          <label>การทำงาน</label>
+          <select id="vpd-action-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
+            <option value="on">เปิด VPD</option>
+            <option value="off">ปิด VPD</option>
+          </select>
+        </div>
+      </div>
+      <label>วัน</label>
+      <div class="day-selector" id="vpd-days">
+        <div class="day-btn sel" data-d="0">อา</div>
+        <div class="day-btn sel" data-d="1">จ</div>
+        <div class="day-btn sel" data-d="2">อ</div>
+        <div class="day-btn sel" data-d="3">พ</div>
+        <div class="day-btn sel" data-d="4">พฤ</div>
+        <div class="day-btn sel" data-d="5">ศ</div>
+        <div class="day-btn sel" data-d="6">ส</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-green-sm" onclick="addSchedule('vpd')" style="flex:2;">➕ เพิ่มรอบนี้ (Local)</button>
+        <button class="btn-green-sm" onclick="addAndSendCron('vpd')" style="flex:3;background:#1e6fbf;">☁️ เพิ่ม + ส่ง cron-job.org</button>
+      </div>
+
+      <hr class="divider">
+
+      <div id="vpd-sched-list"><div class="empty-msg">ยังไม่มีตาราง</div></div>
+
+      <div class="sched-ctrl">
+        <button style="background:#1a9e4a;color:white;" onclick="startScheduler('vpd')">▶ เริ่ม</button>
+        <button style="background:#c0392b;color:white;" onclick="stopScheduler('vpd')">⏹ หยุด</button>
+      </div>
+      <div class="sched-status sched-stopped" id="vpd-sched-status">⏹ ยังไม่ได้เริ่ม</div>
+      <div class="log-box" id="vpd-log"><span style="color:#555">รอการทำงาน...</span></div>
+    </div>
+  </div>
+
+<script>
+  const KEY_ST = "ts_write_key";
+  const SCHED_ST = "control_schedules";
+  const DAY_SHORT = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+
+  let schedules = { soil: [], vpd: [] };
+  let schedulerRunning = { soil: false, vpd: false };
+  let tickIntervals = { soil: null, vpd: null };
+  let lastMinute = { soil: "", vpd: "" };
+
+  // นาฬิกา
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById("clock").innerText =
+      [now.getHours(), now.getMinutes(), now.getSeconds()].map(n => String(n).padStart(2,'0')).join(':');
+    document.getElementById("date-disp").innerText =
+      now.toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }, 1000);
+
+  // ===================== API Key =====================
+  window.onload = function() {
+    const saved = localStorage.getItem(KEY_ST);
+    if (saved) {
+      document.getElementById("apikey").value = saved;
+      document.getElementById("key-status").innerText = "✅ ใช้ key ที่บันทึกไว้";
+    }
+    loadSchedules();
+    initDayBtns();
+    const savedCronKey = localStorage.getItem("cronjob_api_key");
+    if (savedCronKey) {
+      document.getElementById("cronjob-key").value = savedCronKey;
+      document.getElementById("cronjob-key-status").innerText = "✅ ใช้ cron-job Key ที่บันทึกไว้";
+    }
+  };
+
+  function saveKey() {
+    const key = document.getElementById("apikey").value.trim();
+    if (!key) { document.getElementById("key-status").innerText = "❌ กรุณาใส่ key"; return; }
+    localStorage.setItem(KEY_ST, key);
+    document.getElementById("key-status").innerText = "✅ บันทึก Key แล้ว";
+  }
+
+  function saveCronKey() {
+    const key = document.getElementById("cronjob-key").value.trim();
+    if (!key) { document.getElementById("cronjob-key-status").innerText = "❌ กรุณาใส่ key"; return; }
+    localStorage.setItem("cronjob_api_key", key);
+    document.getElementById("cronjob-key-status").innerText = "✅ บันทึก cron-job Key แล้ว";
+  }
+
+  function getCronKey() { return localStorage.getItem("cronjob_api_key") || ""; }
+
+  // สร้าง cron-job.org job
+  async function createCronJob(title, url, cronExpr) {
+    const cronKey = getCronKey();
+    if (!cronKey) { alert("กรุณาใส่ cron-job.org API Key ก่อน"); return false; }
+
+    const body = {
+      job: {
+        url: url,
+        enabled: true,
+        title: title,
+        schedule: { timezone: "Asia/Bangkok", expiresAt: 0, hours: [-1], mdays: [-1], minutes: [parseInt(cronExpr.split(" ")[0])], months: [-1], wdays: cronExpr.split(" ")[4] !== "*" ? cronExpr.split(" ")[4].split(",").map(Number) : [-1] },
+        requestTimeout: 30,
+        redirectSuccess: true,
+        requestMethod: 0
+      }
+    };
+
+    try {
+      const res = await fetch("https://api.cron-job.org/jobs", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + cronKey
+        },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.jobId) return data.jobId;
+      console.error("cron-job error:", data);
+      return false;
+    } catch(e) {
+      console.error("cron-job fetch error:", e);
+      return false;
+    }
+  }
+
+  // สร้าง job พร้อมส่ง ThingSpeak
+  async function sendToCronJob(type, s) {
+    const tsKey = document.getElementById("apikey").value.trim();
+    if (!tsKey) { alert("กรุณาใส่ ThingSpeak Write API Key"); return; }
+
+    let urls = [];
+    const h = parseInt(s.time.split(":")[0]);
+    const m = parseInt(s.time.split(":")[1]);
+    // UTC+7 → UTC
+    let utcH = ((h - 7) + 24) % 24;
+    const days = s.days.length === 7 ? "*" : s.days.join(",");
+
+    if (type === "soil") {
+      const zone = s.action.zone;
+      // Job 1: ส่งโซน
+      urls.push({
+        title: `[รดน้ำ] ${s.label} โซน${zone===5?"1-2":"3-4"}`,
+        url: `https://api.thingspeak.com/update?api_key=${tsKey}&field4=${zone}&field5=5`,
+        cron: `${m} ${utcH} * * ${days}`
+      });
+      // Job 2: เปิดปั๊ม +1 นาที
+      const m2 = (m + 1) % 60;
+      const h2 = m + 1 >= 60 ? (utcH + 1) % 24 : utcH;
+      urls.push({
+        title: `[รดน้ำ] ${s.label} เปิดปั๊ม`,
+        url: `https://api.thingspeak.com/update?api_key=${tsKey}&field6=5`,
+        cron: `${m2} ${h2} * * ${days}`
+      });
+    } else {
+      if (s.action.mode === "on") {
+        urls.push({
+          title: `[VPD] ${s.label} เปิด`,
+          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field5=5`,
+          cron: `${m} ${utcH} * * ${days}`
+        });
+        const m2 = (m + 1) % 60;
+        const h2 = m + 1 >= 60 ? (utcH + 1) % 24 : utcH;
+        urls.push({
+          title: `[VPD] ${s.label} เปิดปั๊ม`,
+          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field6=5`,
+          cron: `${m2} ${h2} * * ${days}`
+        });
+      } else {
+        urls.push({
+          title: `[VPD] ${s.label} ปิด`,
+          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field5=0&field6=0`,
+          cron: `${m} ${utcH} * * ${days}`
+        });
+      }
+    }
+
+    addLog(type, `⏳ กำลังสร้าง ${urls.length} job ใน cron-job.org...`);
+    let success = 0;
+    for (const j of urls) {
+      const jobId = await createCronJob(j.title, j.url, j.cron);
+      if (jobId) {
+        addLog(type, `✅ สร้าง Job "${j.title}" สำเร็จ (ID: ${jobId})`);
+        success++;
+      } else {
+        addLog(type, `❌ สร้าง Job "${j.title}" ไม่สำเร็จ`, true);
+      }
+      await new Promise(r => setTimeout(r, 500));
+    }
+    addLog(type, `✅ สำเร็จ ${success}/${urls.length} job — ดูที่ cron-job.org ได้เลยครับ`);
+  }
+
+  function getKey() { return document.getElementById("apikey").value.trim(); }
+
+  // ===================== Tabs =====================
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='soil')||(i===1&&tab==='vpd')));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  // ===================== ThingSpeak =====================
+  function send(params, cb) {
+    const key = getKey();
+    if (!key) { cb && cb(false, "ไม่มี API Key"); return; }
+    const qs = Object.entries(params).map(([k,v]) => `${k}=${v}`).join('&');
+    fetch(`https://api.thingspeak.com/update?api_key=${key}&${qs}`)
+      .then(r => r.text())
+      .then(res => cb && cb(res !== "0", res))
+      .catch(e => cb && cb(false, e));
+  }
+
+  function setStatus(id, msg, color) {
+    const el = document.getElementById(id);
+    if (el) { el.innerText = msg; el.style.color = color; }
+  }
+
+  function setBadge(id, text, cls) {
+    const el = document.getElementById(id);
+    if (el) { el.innerText = text; el.className = "state-badge " + cls; }
+  }
+
+  // ===================== รดน้ำในดิน =====================
+  function soilZone(val) {
+    setStatus("soil-zone-status", "กำลังส่ง...", "#aaa");
+    send({ field4: val }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        const label = val === 5 ? "โซน 1-2" : "โซน 3-4";
+        setStatus("soil-zone-status", `✅ [${time}] ${label} สำเร็จ (Entry: ${res})`, "#73bf69");
+        setBadge("soil-zone-state", val===5 ? "โซน 1-2 🟢" : "โซน 3-4 🟢", "badge-on");
+      } else {
+        setStatus("soil-zone-status", `❌ ส่งไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+      }
+    });
+  }
+
+  function soilPump(val) {
+    setStatus("soil-pump-status", "กำลังส่ง...", "#aaa");
+    send({ field6: val }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("soil-pump-status", `✅ [${time}] ปั๊ม${val===5?'เปิด':'ปิด'} สำเร็จ (Entry: ${res})`, "#73bf69");
+        setBadge("soil-pump-state", val===5 ? "🟢 เปิด" : "🔴 ปิด", val===5 ? "badge-on" : "badge-off");
+      } else {
+        setStatus("soil-pump-status", `❌ ส่งไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  function soilStartZone(zone) {
+    const zoneName = zone === 5 ? "โซน 1-2" : "โซน 3-4";
+    setStatus("soil-combo-status", `⏳ ส่ง field4 ${zoneName}...`, "#f5a623");
+    send({ field4: zone, field5: 5 }, (ok, res) => {
+      if (ok) {
+        setStatus("soil-combo-status", `✅ ${zoneName} + รอ 5 วิ จะเปิดปั๊ม...`, "#f5a623");
+        setTimeout(() => {
+          send({ field6: 5 }, (ok2, res2) => {
+            const time = new Date().toLocaleTimeString('th-TH');
+            if (ok2) {
+              setStatus("soil-combo-status", `✅ [${time}] ${zoneName} + ปั๊มเปิดแล้ว! 💧`, "#73bf69");
+              setBadge("soil-zone-state", zoneName + " 🟢", "badge-on");
+              setBadge("soil-pump-state", "🟢 เปิด", "badge-on");
+            } else {
+              setStatus("soil-combo-status", `❌ เปิดปั๊มไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+            }
+          });
+        }, 5000);
+      } else {
+        setStatus("soil-combo-status", `❌ ส่งโซนไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  function soilStop() {
+    setStatus("soil-combo-status", "กำลังหยุด...", "#aaa");
+    send({ field4: 0, field5: 0, field6: 0 }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("soil-combo-status", `✅ [${time}] หยุดทั้งหมดแล้ว`, "#73bf69");
+        setBadge("soil-zone-state", "🔴 ปิด", "badge-off");
+        setBadge("soil-pump-state", "🔴 ปิด", "badge-off");
+      } else {
+        setStatus("soil-combo-status", `❌ ส่งไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  // ===================== VPD =====================
+  function vpdStart() {
+    setStatus("vpd-status", "⏳ ส่ง field5=5 และรอ 5 วิ เปิดปั๊ม...", "#f5a623");
+    send({ field5: 5 }, (ok, res) => {
+      if (ok) {
+        setTimeout(() => {
+          send({ field6: 5 }, (ok2) => {
+            const time = new Date().toLocaleTimeString('th-TH');
+            if (ok2) {
+              setStatus("vpd-status", `✅ [${time}] VPD + ปั๊มเปิดแล้ว! 💨`, "#73bf69");
+              setBadge("vpd-state", "🟢 เปิด", "badge-on");
+            } else {
+              setStatus("vpd-status", `❌ เปิดปั๊มไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+            }
+          });
+        }, 5000);
+      } else {
+        setStatus("vpd-status", `❌ ส่งไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  function vpdStop() {
+    setStatus("vpd-status", "กำลังปิด...", "#aaa");
+    send({ field5: 0, field6: 0 }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("vpd-status", `✅ [${time}] ปิด VPD + ปั๊มแล้ว`, "#73bf69");
+        setBadge("vpd-state", "🔴 ปิด", "badge-off");
+      } else {
+        setStatus("vpd-status", `❌ ส่งไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  // ===================== Day Buttons =====================
+  function initDayBtns() {
+    document.querySelectorAll('.day-btn').forEach(btn => {
+      btn.addEventListener('click', () => btn.classList.toggle('sel'));
+    });
+  }
+
+  function getSelectedDays(containerId) {
+    return [...document.querySelectorAll(`#${containerId} .day-btn.sel`)].map(b => parseInt(b.dataset.d));
+  }
+
+  function daysLabel(days) {
+    if (days.length === 7) return "ทุกวัน";
+    return days.map(d => DAY_SHORT[d]).join(", ");
+  }
+
+  // ===================== Scheduler =====================
+  function loadSchedules() {
+    try {
+      const saved = localStorage.getItem(SCHED_ST);
+      if (saved) {
+        schedules = JSON.parse(saved);
+        schedules.soil.forEach(s => s.sentToday = false);
+        schedules.vpd.forEach(s => s.sentToday = false);
+        renderList('soil');
+        renderList('vpd');
+      }
+    } catch(e) {}
+  }
+
+  function saveSchedules() {
+    localStorage.setItem(SCHED_ST, JSON.stringify(schedules));
+  }
+
+  function addSchedule(type) {
+    const time  = document.getElementById(`${type}-time`).value;
+    const label = document.getElementById(`${type}-label`).value.trim() || `รอบ ${time}`;
+    const days  = getSelectedDays(`${type}-days`);
+
+    if (!time) { alert("กรุณาเลือกเวลา"); return; }
+    if (days.length === 0) { alert("กรุณาเลือกอย่างน้อย 1 วัน"); return; }
+
+    let action;
+    if (type === 'soil') {
+      action = { zone: parseInt(document.getElementById('soil-zone-sel').value) };
+    } else {
+      action = { mode: document.getElementById('vpd-action-sel').value };
+    }
+
+    schedules[type].push({ id: Date.now(), time, label, days, action, sentToday: false, lastSent: null });
+    schedules[type].sort((a,b) => a.time.localeCompare(b.time));
+    saveSchedules();
+    renderList(type);
+  }
+
+  function removeSchedule(type, id) {
+    schedules[type] = schedules[type].filter(s => s.id !== id);
+    saveSchedules();
+    renderList(type);
+  }
+
+  function renderList(type) {
+    const el = document.getElementById(`${type}-sched-list`);
+    const list = schedules[type];
+    if (list.length === 0) { el.innerHTML = '<div class="empty-msg">ยังไม่มีตาราง</div>'; return; }
+    el.innerHTML = list.map(s => {
+      const actionLabel = type === 'soil'
+        ? (s.action.zone === 5 ? "🌾 โซน 1-2" : "🌾 โซน 3-4")
+        : (s.action.mode === 'on' ? "💨 เปิด VPD" : "🔴 ปิด VPD");
+      return `
+        <div class="schedule-item">
+          <div class="s-time">${s.time}</div>
+          <div class="s-detail">
+            <div class="s-name">${s.label} — ${actionLabel}</div>
+            <div>📅 ${daysLabel(s.days)} ${s.lastSent ? '| ✅ ' + s.lastSent : ''}</div>
+          </div>
+          <button class="btn-gray" onclick="removeSchedule('${type}', ${s.id})">ลบ</button>
+        </div>`;
+    }).join('');
+  }
+
+  function startScheduler(type) {
+    if (schedules[type].length === 0) { alert("กรุณาเพิ่มตารางก่อน"); return; }
+    if (!getKey()) { alert("กรุณาใส่ Write API Key"); return; }
+
+    schedulerRunning[type] = true;
+    document.getElementById(`${type}-sched-status`).className = "sched-status sched-running";
+    document.getElementById(`${type}-sched-status`).innerText = "🟢 Scheduler กำลังทำงาน...";
+    addLog(type, "▶ เริ่ม Scheduler แล้ว");
+
+    tickIntervals[type] = setInterval(() => {
+      const now = new Date();
+      const day = now.getDay();
+      const min = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      if (min === "00:00" && lastMinute[type] !== "00:00") {
+        schedules[type].forEach(s => s.sentToday = false);
+        addLog(type, "🔄 รีเซ็ตประจำวัน");
+      }
+
+      if (min !== lastMinute[type]) {
+        lastMinute[type] = min;
+        schedules[type].forEach(s => {
+          if (s.time === min && !s.sentToday && s.days.includes(day)) {
+            s.sentToday = true;
+            s.lastSent = new Date().toLocaleTimeString('th-TH');
+            executeSchedule(type, s);
+            saveSchedules();
+            renderList(type);
+          }
+        });
+      }
+    }, 1000);
+  }
+
+  function stopScheduler(type) {
+    schedulerRunning[type] = false;
+    clearInterval(tickIntervals[type]);
+    document.getElementById(`${type}-sched-status`).className = "sched-status sched-stopped";
+    document.getElementById(`${type}-sched-status`).innerText = "⏹ หยุด Scheduler แล้ว";
+    addLog(type, "⏹ หยุด Scheduler แล้ว");
+  }
+
+  function executeSchedule(type, s) {
+    const time = new Date().toLocaleTimeString('th-TH');
+    if (type === 'soil') {
+      const zone = s.action.zone;
+      addLog(type, `⏳ [${time}] ${s.label}: ส่งโซน ${zone===5?'1-2':'3-4'}...`);
+      send({ field4: zone, field5: 5 }, (ok) => {
+        if (ok) {
+          setTimeout(() => {
+            send({ field6: 5 }, (ok2) => {
+              addLog(type, ok2
+                ? `✅ [${time}] ${s.label}: เปิดปั๊มแล้ว 💧`
+                : `❌ [${time}] ${s.label}: เปิดปั๊มไม่สำเร็จ`, !ok2);
+            });
+          }, 5000);
+        } else {
+          addLog(type, `❌ [${time}] ${s.label}: ส่งโซนไม่สำเร็จ`, true);
+        }
+      });
+    } else {
+      if (s.action.mode === 'on') {
+        addLog(type, `⏳ [${time}] ${s.label}: เปิด VPD...`);
+        send({ field5: 5 }, (ok) => {
+          if (ok) {
+            setTimeout(() => {
+              send({ field6: 5 }, (ok2) => {
+                addLog(type, ok2
+                  ? `✅ [${time}] ${s.label}: VPD + ปั๊มเปิดแล้ว 💨`
+                  : `❌ [${time}] ${s.label}: เปิดปั๊มไม่สำเร็จ`, !ok2);
+              });
+            }, 5000);
+          } else {
+            addLog(type, `❌ ส่งไม่สำเร็จ`, true);
+          }
+        });
+      } else {
+        addLog(type, `⏳ [${time}] ${s.label}: ปิด VPD...`);
+        send({ field5: 0, field6: 0 }, (ok) => {
+          addLog(type, ok
+            ? `✅ [${time}] ${s.label}: ปิด VPD + ปั๊มแล้ว`
+            : `❌ ปิดไม่สำเร็จ`, !ok);
+        });
+      }
+    }
+  }
+
+  // เพิ่มตารางแล้วส่งไป cron-job.org พร้อมกัน
+  function addAndSendCron(type) {
+    const time  = document.getElementById(`${type}-time`).value;
+    const label = document.getElementById(`${type}-label`).value.trim() || `รอบ ${time}`;
+    const days  = getSelectedDays(`${type}-days`);
+
+    if (!time) { alert("กรุณาเลือกเวลา"); return; }
+    if (days.length === 0) { alert("กรุณาเลือกอย่างน้อย 1 วัน"); return; }
+    if (!getCronKey()) { alert("กรุณาใส่ cron-job.org API Key ก่อน"); return; }
+
+    let action;
+    if (type === 'soil') {
+      action = { zone: parseInt(document.getElementById('soil-zone-sel').value) };
+    } else {
+      action = { mode: document.getElementById('vpd-action-sel').value };
+    }
+
+    const s = { id: Date.now(), time, label, days, action, sentToday: false, lastSent: null };
+    schedules[type].push(s);
+    schedules[type].sort((a,b) => a.time.localeCompare(b.time));
+    saveSchedules();
+    renderList(type);
+
+    sendToCronJob(type, s);
+  }
+
+  function addLog(type, msg, isErr = false) {
+    const log = document.getElementById(`${type}-log`);
+    if (!log) return;
+    const div = document.createElement("div");
+    div.className = isErr ? "log-err" : "";
+    div.innerText = msg;
+    log.prepend(div);
+    while (log.children.length > 30) log.removeChild(log.lastChild);
+  }
+</script>
+</body>
+</html>
