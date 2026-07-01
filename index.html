@@ -174,7 +174,7 @@
         <button class="btn-action btn-green" onclick="soilZone(6)">
           <span class="btn-icon">🌾</span>โซน 1-2
         </button>
-        <button class="btn-action btn-red" onclick="soilZone(1)">
+        <button class="btn-action btn-red" onclick="soilZone(2)">
           <span class="btn-icon">🌾</span>โซน 3-4
         </button>
       </div>
@@ -202,7 +202,7 @@
         <button class="btn-action btn-green" onclick="soilStartZone(6)">
           <span class="btn-icon">▶️</span>เริ่ม โซน 1-2
         </button>
-        <button class="btn-action btn-green" onclick="soilStartZone(1)">
+        <button class="btn-action btn-green" onclick="soilStartZone(2)">
           <span class="btn-icon">▶️</span>เริ่ม โซน 3-4
         </button>
       </div>
@@ -233,7 +233,7 @@
           <label>โซน</label>
           <select id="soil-zone-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
             <option value="6">โซน 1-2</option>
-            <option value="1">โซน 3-4</option>
+            <option value="2">โซน 3-4</option>
           </select>
         </div>
         <div>
@@ -252,6 +252,7 @@
         <div class="day-btn sel" data-d="6">ส</div>
       </div>
       <div style="display:flex;gap:8px;">
+        <button class="btn-green-sm" onclick="addSchedule('soil')" style="flex:2;">➕ เพิ่มรอบนี้ (Local)</button>
         <button class="btn-green-sm" onclick="addAndSendCron('soil')" style="flex:3;background:#1e6fbf;">☁️ เพิ่ม + ส่ง cron-job.org</button>
       </div>
 
@@ -314,6 +315,7 @@
         <div class="day-btn sel" data-d="6">ส</div>
       </div>
       <div style="display:flex;gap:8px;">
+        <button class="btn-green-sm" onclick="addSchedule('vpd')" style="flex:2;">➕ เพิ่มรอบนี้ (Local)</button>
         <button class="btn-green-sm" onclick="addAndSendCron('vpd')" style="flex:3;background:#1e6fbf;">☁️ เพิ่ม + ส่ง cron-job.org</button>
       </div>
 
@@ -538,7 +540,7 @@
       if (ok) {
         const label = val === 5 ? "โซน 1-2" : "โซน 3-4";
         setStatus("soil-zone-status", `✅ [${time}] ${label} สำเร็จ (Entry: ${res})`, "#73bf69");
-        setBadge("soil-zone-state", val===6 ? "โซน 1-2 🟢" : "โซน 3-4 🟢", "badge-on");
+        setBadge("soil-zone-state", val===5 ? "โซน 1-2 🟢" : "โซน 3-4 🟢", "badge-on");
       } else {
         setStatus("soil-zone-status", `❌ ส่งไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
       }
