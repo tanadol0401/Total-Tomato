@@ -167,6 +167,36 @@
 
     <!-- Manual -->
     <div class="card">
+      <div class="card-title">🕹️ Manual — เลือกโซน
+        <span class="state-badge badge-idle" id="soil-zone-state">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="soilZone(6)">
+          <span class="btn-icon">🌾</span>โซน 1-2
+        </button>
+        <button class="btn-action btn-red" onclick="soilZone(2)">
+          <span class="btn-icon">🌾</span>โซน 3-4
+        </button>
+      </div>
+      <div class="status-box" id="soil-zone-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💧 ปั๊มน้ำ (Field 6)
+        <span class="state-badge badge-idle" id="soil-pump-state">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-action btn-green" onclick="soilPump(5)">
+          <span class="btn-icon">⚡</span>เปิดปั๊ม
+        </button>
+        <button class="btn-action btn-red" onclick="soilPump(0)">
+          <span class="btn-icon">🔴</span>ปิดปั๊ม
+        </button>
+      </div>
+      <div class="status-box" id="soil-pump-status"></div>
+    </div>
+
+    <div class="card">
       <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 5 วิ)</div>
       <div class="btn-row">
         <button class="btn-action btn-green" onclick="soilStartZone(6)">
