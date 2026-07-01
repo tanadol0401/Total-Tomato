@@ -220,15 +220,25 @@
       <input type="text" id="soil-label" placeholder="เช่น รดเช้า" style="margin-bottom:8px;">
       <div class="row2">
         <div>
-          <label>เวลา</label>
+          <label>⏰ เวลาเปิด</label>
           <input type="time" id="soil-time" value="06:00" style="margin-bottom:8px;">
         </div>
+        <div>
+          <label>⏰ เวลาปิด</label>
+          <input type="time" id="soil-time-off" value="07:00" style="margin-bottom:8px;">
+        </div>
+      </div>
+      <div class="row2">
         <div>
           <label>โซน</label>
           <select id="soil-zone-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
             <option value="5">โซน 1-2</option>
             <option value="0">โซน 3-4</option>
           </select>
+        </div>
+        <div>
+          <label style="color:#555;font-size:11px;">ปิด = field4=0,field5=0,field6=0</label>
+          <div style="padding:9px;background:#111;border:1px solid #333;border-radius:6px;font-size:11px;color:#555;">ปิดทุก relay</div>
         </div>
       </div>
       <label>วัน</label>
@@ -286,15 +296,12 @@
       <input type="text" id="vpd-label" placeholder="เช่น VPD เช้า" style="margin-bottom:8px;">
       <div class="row2">
         <div>
-          <label>เวลา</label>
+          <label>⏰ เวลาเปิด</label>
           <input type="time" id="vpd-time" value="08:00" style="margin-bottom:8px;">
         </div>
         <div>
-          <label>การทำงาน</label>
-          <select id="vpd-action-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
-            <option value="on">เปิด VPD</option>
-            <option value="off">ปิด VPD</option>
-          </select>
+          <label>⏰ เวลาปิด</label>
+          <input type="time" id="vpd-time-off" value="09:00" style="margin-bottom:8px;">
         </div>
       </div>
       <label>วัน</label>
@@ -413,52 +420,69 @@
   }
 
   // สร้าง job พร้อมส่ง ThingSpeak
+  function timeToUTC(timeStr) {
+    const h = parseInt(timeStr.split(":")[0]);
+    const m = parseInt(timeStr.split(":")[1]);
+    const utcH = ((h - 7) + 24) % 24;
+    return { h: utcH, m };
+  }
+
   async function sendToCronJob(type, s) {
     const tsKey = document.getElementById("apikey").value.trim();
     if (!tsKey) { alert("กรุณาใส่ ThingSpeak Write API Key"); return; }
 
     let urls = [];
-    const h = parseInt(s.time.split(":")[0]);
-    const m = parseInt(s.time.split(":")[1]);
-    // UTC+7 → UTC
-    let utcH = ((h - 7) + 24) % 24;
+    const on  = timeToUTC(s.time);
     const days = s.days.length === 7 ? "*" : s.days.join(",");
+    const hasOff = s.action.timeOff;
 
     if (type === "soil") {
       const zone = s.action.zone;
-      // Job 1: ส่งโซน
+      // เปิด: ส่งโซน
       urls.push({
-        title: `[รดน้ำ] ${s.label} โซน${zone===5?"1-2":"3-4"}`,
+        title: `[รดน้ำ] ${s.label} เปิดโซน${zone===5?"1-2":"3-4"}`,
         url: `https://api.thingspeak.com/update?api_key=${tsKey}&field4=${zone}&field5=5`,
-        cron: `${m} ${utcH} * * ${days}`
+        cron: `${on.m} ${on.h} * * ${days}`
       });
-      // Job 2: เปิดปั๊ม +1 นาที
-      const m2 = (m + 1) % 60;
-      const h2 = m + 1 >= 60 ? (utcH + 1) % 24 : utcH;
+      // เปิดปั๊ม +1 นาที
+      const pm = (on.m + 1) % 60;
+      const ph = on.m + 1 >= 60 ? (on.h + 1) % 24 : on.h;
       urls.push({
         title: `[รดน้ำ] ${s.label} เปิดปั๊ม`,
         url: `https://api.thingspeak.com/update?api_key=${tsKey}&field6=5`,
-        cron: `${m2} ${h2} * * ${days}`
+        cron: `${pm} ${ph} * * ${days}`
       });
+      // ปิด (ถ้าตั้งเวลาปิดไว้)
+      if (hasOff) {
+        const off = timeToUTC(hasOff);
+        urls.push({
+          title: `[รดน้ำ] ${s.label} ปิดทั้งหมด`,
+          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field4=0&field5=0&field6=0`,
+          cron: `${off.m} ${off.h} * * ${days}`
+        });
+      }
     } else {
-      if (s.action.mode === "on") {
-        urls.push({
-          title: `[VPD] ${s.label} เปิด`,
-          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field5=5`,
-          cron: `${m} ${utcH} * * ${days}`
-        });
-        const m2 = (m + 1) % 60;
-        const h2 = m + 1 >= 60 ? (utcH + 1) % 24 : utcH;
-        urls.push({
-          title: `[VPD] ${s.label} เปิดปั๊ม`,
-          url: `https://api.thingspeak.com/update?api_key=${tsKey}&field6=5`,
-          cron: `${m2} ${h2} * * ${days}`
-        });
-      } else {
+      // VPD เปิด
+      urls.push({
+        title: `[VPD] ${s.label} เปิด`,
+        url: `https://api.thingspeak.com/update?api_key=${tsKey}&field5=5`,
+        cron: `${on.m} ${on.h} * * ${days}`
+      });
+      // เปิดปั๊ม +1 นาที
+      const pm = (on.m + 1) % 60;
+      const ph = on.m + 1 >= 60 ? (on.h + 1) % 24 : on.h;
+      urls.push({
+        title: `[VPD] ${s.label} เปิดปั๊ม`,
+        url: `https://api.thingspeak.com/update?api_key=${tsKey}&field6=5`,
+        cron: `${pm} ${ph} * * ${days}`
+      });
+      // VPD ปิด (ถ้าตั้งเวลาปิดไว้)
+      if (hasOff) {
+        const off = timeToUTC(hasOff);
         urls.push({
           title: `[VPD] ${s.label} ปิด`,
           url: `https://api.thingspeak.com/update?api_key=${tsKey}&field5=0&field6=0`,
-          cron: `${m} ${utcH} * * ${days}`
+          cron: `${off.m} ${off.h} * * ${days}`
         });
       }
     }
@@ -468,10 +492,10 @@
     for (const j of urls) {
       const jobId = await createCronJob(j.title, j.url, j.cron);
       if (jobId) {
-        addLog(type, `✅ สร้าง Job "${j.title}" สำเร็จ (ID: ${jobId})`);
+        addLog(type, `✅ "${j.title}" สำเร็จ (ID: ${jobId})`);
         success++;
       } else {
-        addLog(type, `❌ สร้าง Job "${j.title}" ไม่สำเร็จ`, true);
+        addLog(type, `❌ "${j.title}" ไม่สำเร็จ`, true);
       }
       await new Promise(r => setTimeout(r, 500));
     }
@@ -777,24 +801,26 @@
     }
   }
 
-  // เพิ่มตารางแล้วส่งไป cron-job.org พร้อมกัน
+  // เพิ่มตารางแล้วส่งไป cron-job.org พร้อมกัน (มีเวลาปิดด้วย)
   function addAndSendCron(type) {
-    const time  = document.getElementById(`${type}-time`).value;
-    const label = document.getElementById(`${type}-label`).value.trim() || `รอบ ${time}`;
-    const days  = getSelectedDays(`${type}-days`);
+    const timeOn  = document.getElementById(`${type}-time`).value;
+    const timeOff = document.getElementById(`${type}-time-off`).value;
+    const label   = document.getElementById(`${type}-label`).value.trim() || `รอบ ${timeOn}`;
+    const days    = getSelectedDays(`${type}-days`);
 
-    if (!time) { alert("กรุณาเลือกเวลา"); return; }
+    if (!timeOn)  { alert("กรุณาเลือกเวลาเปิด"); return; }
+    if (!timeOff) { alert("กรุณาเลือกเวลาปิด"); return; }
     if (days.length === 0) { alert("กรุณาเลือกอย่างน้อย 1 วัน"); return; }
     if (!getCronKey()) { alert("กรุณาใส่ cron-job.org API Key ก่อน"); return; }
 
     let action;
     if (type === 'soil') {
-      action = { zone: parseInt(document.getElementById('soil-zone-sel').value) };
+      action = { zone: parseInt(document.getElementById('soil-zone-sel').value), timeOff };
     } else {
-      action = { mode: document.getElementById('vpd-action-sel').value };
+      action = { mode: 'on', timeOff };
     }
 
-    const s = { id: Date.now(), time, label, days, action, sentToday: false, lastSent: null };
+    const s = { id: Date.now(), time: timeOn, label, days, action, sentToday: false, lastSent: null };
     schedules[type].push(s);
     schedules[type].sort((a,b) => a.time.localeCompare(b.time));
     saveSchedules();
