@@ -197,7 +197,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 5 วิ)</div>
+      <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 15 วิ)</div>
       <div class="btn-row">
         <button class="btn-action btn-green" onclick="soilStartZone(5)">
           <span class="btn-icon">▶️</span>เริ่ม โซน 1-2
@@ -565,7 +565,7 @@
     setStatus("soil-combo-status", `⏳ ส่ง field4 ${zoneName}...`, "#f5a623");
     send({ field4: zone, field5: 5 }, (ok, res) => {
       if (ok) {
-        setStatus("soil-combo-status", `✅ ${zoneName} + รอ 17 วิ จะเปิดปั๊ม...`, "#f5a623");
+        setStatus("soil-combo-status", `✅ ${zoneName} + รอ 15 วิ จะเปิดปั๊ม...`, "#f5a623");
         setTimeout(() => {
           send({ field6: 5 }, (ok2, res2) => {
             const time = new Date().toLocaleTimeString('th-TH');
