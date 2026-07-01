@@ -174,7 +174,7 @@
         <button class="btn-action btn-green" onclick="soilZone(5)">
           <span class="btn-icon">🌾</span>โซน 1-2
         </button>
-        <button class="btn-action btn-red" onclick="soilZone(0)">
+        <button class="btn-action btn-red" onclick="soilZone(1)">
           <span class="btn-icon">🌾</span>โซน 3-4
         </button>
       </div>
@@ -197,12 +197,12 @@
     </div>
 
     <div class="card">
-      <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 15 วิ)</div>
+      <div class="card-title">⚡ เปิดพร้อมกัน (โซน + ปั๊ม delay 5 วิ)</div>
       <div class="btn-row">
         <button class="btn-action btn-green" onclick="soilStartZone(5)">
           <span class="btn-icon">▶️</span>เริ่ม โซน 1-2
         </button>
-        <button class="btn-action btn-green" onclick="soilStartZone(0)">
+        <button class="btn-action btn-green" onclick="soilStartZone(1)">
           <span class="btn-icon">▶️</span>เริ่ม โซน 3-4
         </button>
       </div>
@@ -233,7 +233,7 @@
           <label>โซน</label>
           <select id="soil-zone-sel" style="width:100%;padding:9px;background:#2c2f35;border:1px solid #444;color:white;border-radius:6px;margin-bottom:8px;">
             <option value="5">โซน 1-2</option>
-            <option value="0">โซน 3-4</option>
+            <option value="1">โซน 3-4</option>
           </select>
         </div>
         <div>
@@ -565,7 +565,7 @@
     setStatus("soil-combo-status", `⏳ ส่ง field4 ${zoneName}...`, "#f5a623");
     send({ field4: zone, field5: 5 }, (ok, res) => {
       if (ok) {
-        setStatus("soil-combo-status", `✅ ${zoneName} + รอ 15 วิ จะเปิดปั๊ม...`, "#f5a623");
+        setStatus("soil-combo-status", `✅ ${zoneName} + รอ 17 วิ จะเปิดปั๊ม...`, "#f5a623");
         setTimeout(() => {
           send({ field6: 5 }, (ok2, res2) => {
             const time = new Date().toLocaleTimeString('th-TH');
@@ -828,6 +828,72 @@
 
     sendToCronJob(type, s);
   }
+
+  // =================== Quick Control ===================
+  function quickSoilZone(zone) {
+    const zoneName = zone === 5 ? "โซน 1-2" : "โซน 3-4";
+    setStatus("quick-status", `⏳ เปิด ${zoneName} + รอ 17 วิ เปิดปั๊ม...`, "#f5a623");
+    send({ field4: zone, field5: 5 }, (ok) => {
+      if (ok) {
+        setTimeout(() => {
+          send({ field6: 5 }, (ok2) => {
+            const time = new Date().toLocaleTimeString('th-TH');
+            if (ok2) {
+              setStatus("quick-status", `✅ [${time}] ${zoneName} + ปั๊มเปิดแล้ว! 💧`, "#73bf69");
+              setBadge("soil-zone-state", zoneName + " 🟢", "badge-on");
+              setBadge("soil-pump-state", "🟢 เปิด", "badge-on");
+            } else {
+              setStatus("quick-status", `❌ เปิดปั๊มไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+            }
+          });
+        }, 17000);
+      } else {
+        setStatus("quick-status", `❌ ส่งโซนไม่สำเร็จ`, "#e74c3c");
+      }
+    });
+  }
+
+  function pumpOn() {
+    setStatus("quick-status", "⏳ กำลังเปิดปั๊ม...", "#f5a623");
+    send({ field6: 5 }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("quick-status", `✅ [${time}] เปิดปั๊มสำเร็จ! Entry: ${res}`, "#73bf69");
+        setBadge("soil-pump-state", "🟢 เปิด", "badge-on");
+      } else {
+        setStatus("quick-status", `❌ ส่งไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+      }
+    });
+  }
+
+  function pumpOff() {
+    setStatus("quick-status", "⏳ กำลังปิดปั๊ม...", "#aaa");
+    send({ field6: 0 }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("quick-status", `✅ [${time}] ปิดปั๊มสำเร็จ! Entry: ${res}`, "#73bf69");
+        setBadge("soil-pump-state", "🔴 ปิด", "badge-off");
+      } else {
+        setStatus("quick-status", `❌ ส่งไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+      }
+    });
+  }
+
+  function stopAll() {
+    setStatus("quick-status", "⏳ กำลังหยุดทั้งหมด...", "#aaa");
+    send({ field4: 0, field5: 0, field6: 0 }, (ok, res) => {
+      const time = new Date().toLocaleTimeString('th-TH');
+      if (ok) {
+        setStatus("quick-status", `✅ [${time}] หยุดทั้งหมดแล้ว! Entry: ${res}`, "#73bf69");
+        setBadge("soil-zone-state", "🔴 ปิด", "badge-off");
+        setBadge("soil-pump-state", "🔴 ปิด", "badge-off");
+        setBadge("vpd-state", "🔴 ปิด", "badge-off");
+      } else {
+        setStatus("quick-status", `❌ ส่งไม่สำเร็จ (รอ 15 วิ)`, "#e74c3c");
+      }
+    });
+  }
+  // =====================================================
 
   function addLog(type, msg, isErr = false) {
     const log = document.getElementById(`${type}-log`);
